@@ -1,57 +1,130 @@
 using System;
 using System.Collections.Generic;
 
-namespace AsignacionAsientos
+namespace ParqueDiversiones
 {
-    public class Persona
+    // Clase que representa a una persona en la fila
+    class Persona
     {
-        public string Nombre { get; set; }
-        public int ID { get; set; }
+        public string Nombre { get; private set; }
 
-        public Persona(string nombre, int id)
+        public Persona(string nombre)
         {
             Nombre = nombre;
-            ID = id;
         }
     }
 
-    public class ColaAsientos
+    // Clase que representa la atracción con la cola y asignación de asientos
+    class Atraccion
     {
-        private Queue<Persona> cola = new Queue<Persona>();
-        private int capacidadMaxima = 30;
+        private Queue<Persona> cola;
+        private int totalAsientos;
+        private int asientosVendidos;
 
-        public void AgregarPersona(Persona persona)
+        public Atraccion(int capacidad)
         {
-            if (cola.Count < capacidadMaxima)
-            {
-                cola.Enqueue(persona);
-                Console.WriteLine($"[+] {persona.Nombre} ha sido agregado a la cola.");
-            }
-            else
-            {
-                Console.WriteLine("[!] No hay más asientos disponibles.");
-            }
+            totalAsientos = capacidad;
+            asientosVendidos = 0;
+            cola = new Queue<Persona>();
         }
 
+        // Agrega persona a la fila si quedan asientos
+        public bool AgregarPersona(Persona p)
+        {
+            if (asientosVendidos + cola.Count >= totalAsientos)
+            {
+                return false; // No quedan asientos disponibles
+            }
+
+            cola.Enqueue(p);
+            return true;
+        }
+
+        // Asigna asiento a la persona que está en la fila primero
+        public Persona AsignarAsiento()
+        {
+            if (cola.Count == 0 || asientosVendidos >= totalAsientos)
+            {
+                return null; // No hay personas o no quedan asientos
+            }
+
+            Persona personaAsignada = cola.Dequeue();
+            asientosVendidos++;
+            return personaAsignada;
+        }
+
+        // Muestra el estado actual de la cola
         public void MostrarCola()
         {
-            Console.WriteLine("\n--- Lista de Personas en la Cola ---");
-            int asiento = 1;
+            if (cola.Count == 0)
+            {
+                Console.WriteLine("No hay personas esperando en la cola.");
+                return;
+            }
+
+            Console.WriteLine("Personas en la cola (orden de llegada):");
+            int pos = 1;
             foreach (var p in cola)
             {
-                Console.WriteLine($"Asiento {asiento++}: {p.Nombre} (ID: {p.ID})");
+                Console.WriteLine($"{pos}. {p.Nombre}");
+                pos++;
             }
         }
 
-        public void AsignarAsientos()
+        public int AsientosVendidos => asientosVendidos;
+        public int TotalAsientos => totalAsientos;
+        public int PersonasEnCola => cola.Count;
+        public int AsientosDisponibles => totalAsientos - (asientosVendidos + cola.Count);
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
         {
-            Console.WriteLine("\nAsignando asientos...");
-            int asiento = 1;
-            while (cola.Count > 0)
+            Atraccion atraccion = new Atraccion(30);
+
+            Console.WriteLine("Simulación POO: Asignación de 30 asientos en orden de llegada.");
+            Console.WriteLine("--------------------------------------------------------------\n");
+
+            while (atraccion.AsientosVendidos < atraccion.TotalAsientos)
             {
-                Persona p = cola.Dequeue();
-                Console.WriteLine($"[✓] {p.Nombre} asignado al asiento {asiento++}.");
+                Console.Write("Ingrese el nombre de la persona que llega a la fila (o escriba 'reportar' para ver la cola): ");
+                string input = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    Console.WriteLine("Nombre inválido. Intente de nuevo.\n");
+                    continue;
+                }
+
+                if (input.ToLower() == "reportar")
+                {
+                    atraccion.MostrarCola();
+                    Console.WriteLine($"Asientos vendidos: {atraccion.AsientosVendidos}/{atraccion.TotalAsientos}");
+                    Console.WriteLine($"Asientos disponibles: {atraccion.AsientosDisponibles}\n");
+                    continue;
+                }
+
+                Persona nuevaPersona = new Persona(input);
+
+                if (!atraccion.AgregarPersona(nuevaPersona))
+                {
+                    Console.WriteLine("Ya no quedan asientos disponibles. No se acepta más gente.");
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine($"{input} se ha unido a la fila.");
+                }
+
+                Persona asignada = atraccion.AsignarAsiento();
+                Console.WriteLine($"Se asigna asiento #{atraccion.AsientosVendidos} a {asignada.Nombre}.\n");
             }
+
+            Console.WriteLine("Todos los asientos han sido vendidos.");
+            Console.WriteLine("Fin de la simulación.");
+            Console.WriteLine("Presione cualquier tecla para salir...");
+            Console.ReadKey();
         }
     }
 }
